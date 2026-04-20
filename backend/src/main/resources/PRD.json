@@ -3,34 +3,25 @@
   "description": "Una app para contar los vasos de agua que bebes cada día, con diseño azul y un botón grande para añadir vasos fácilmente.",
   "requirements": [
     {
-      "title": "Página de inicio",
-      "description": "Landing page principal con información del producto",
-      "priority": "alta"
+      "id": 1,
+      "title": "Botón grande para añadir vaso de agua",
+      "description": "La app muestra un botón grande y fácil de pulsar que suma un vaso de agua al contador cada vez que el usuario lo toca.",
+      "type": "feature",
+      "priority": "high"
     },
     {
-      "title": "Autenticación de usuarios",
-      "description": "Login y registro con validación de formularios",
-      "priority": "alta"
+      "id": 2,
+      "title": "Contador de vasos del día",
+      "description": "La app muestra claramente cuántos vasos de agua ha bebido el usuario hoy, con un número grande y visible.",
+      "type": "feature",
+      "priority": "high"
     },
     {
-      "title": "Panel de administración",
-      "description": "Dashboard para gestionar los datos de la aplicación",
-      "priority": "media"
-    },
-    {
-      "title": "API REST completa",
-      "description": "Endpoints CRUD para todas las entidades del dominio",
-      "priority": "alta"
-    },
-    {
-      "title": "Diseño responsive",
-      "description": "Interfaz adaptada a móvil, tablet y escritorio",
-      "priority": "media"
-    },
-    {
-      "title": "Tests unitarios",
-      "description": "Cobertura de tests para la lógica de negocio principal",
-      "priority": "baja"
+      "id": 3,
+      "title": "Diseño azul y bonito",
+      "description": "La app tiene un diseño limpio y atractivo con tonos azules (como el agua), que transmite frescura y calma.",
+      "type": "ui",
+      "priority": "high"
     }
   ]
 }
