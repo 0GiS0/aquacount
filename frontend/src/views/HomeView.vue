@@ -1,174 +1,133 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { api } from '../composables/useApi'
-import { useRequirements } from '../composables/useRequirements'
-import type { HealthStatus, Requirement } from '../types'
-import RequirementCard from '../components/RequirementCard.vue'
+import type { HealthStatus } from '../types'
 
 const health = ref<HealthStatus | null>(null)
 const healthLoading = ref(true)
-const { requirements, loading, fetchRequirements, updateStatus } = useRequirements()
+const glassesCount = ref(0)
+const dailyGoal = 8
+const isAnimating = ref(false)
 
-const doneCount = computed(() => requirements.value.filter((r) => r.status === 'DONE').length)
-const progress = computed(() =>
-  requirements.value.length ? Math.round((doneCount.value / requirements.value.length) * 100) : 0,
-)
+const progress = computed(() => Math.min((glassesCount.value / dailyGoal) * 100, 100))
+const goalReached = computed(() => glassesCount.value >= dailyGoal)
 
-// Show splash while building; once all requirements are DONE, show the real app
-const showSplash = computed(() => {
-  // Always show splash if still connecting or loading
-  if (healthLoading.value || loading.value) return true
-  // Show splash if no requirements are done yet (app is still being built)
-  if (doneCount.value === 0) return true
-  // Show the real app once at least one requirement is done
-  return false
-})
+function addGlass() {
+  glassesCount.value++
+  isAnimating.value = true
+  setTimeout(() => {
+    isAnimating.value = false
+  }, 300)
+}
+
+function resetCount() {
+  glassesCount.value = 0
+}
 
 onMounted(async () => {
   try {
     const { data } = await api.get<HealthStatus>('/api/health')
     health.value = data
-    await fetchRequirements()
   } catch {
-    // Backend not running yet — that's OK
+    // Backend not ready
   } finally {
     healthLoading.value = false
   }
 })
-
-const nextStatus: Record<string, Requirement['status']> = {
-  PENDING: 'IN_PROGRESS',
-  IN_PROGRESS: 'DONE',
-  DONE: 'PENDING',
-}
-
-async function cycleStatus(req: Requirement) {
-  await updateStatus(req.id, nextStatus[req.status])
-}
 </script>
 
 <template>
-  <!-- ☕ Splash — Shown while app is being built -->
   <div
-    v-if="showSplash"
-    class="flex min-h-[calc(100vh-73px)] flex-col items-center justify-center text-center"
+    v-if="!health && healthLoading"
+    class="flex min-h-[calc(100vh-73px)] flex-col items-center justify-center bg-gradient-to-b from-blue-50 to-cyan-50 text-center"
   >
-    <!-- Coffee cup -->
     <div class="mb-8">
-      <span class="animate-pulse text-9xl">☕</span>
+      <span class="animate-pulse text-9xl">💧</span>
     </div>
-
-    <h1 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-      Estamos construyendo tu idea
+    <h1 class="text-3xl font-bold tracking-tight text-blue-900 sm:text-4xl">
+      Cargando AquaCount...
     </h1>
-    <p class="mt-3 text-lg text-gray-500">
-      ¿Momento de un café? Mientras tanto, aquí tienes tu lista de deseos:
-    </p>
-
-    <div
-      v-if="health"
-      class="mt-8 inline-flex items-center gap-2 rounded-full bg-green-50 px-4 py-2 text-sm text-green-700"
-    >
-      <span class="h-2 w-2 rounded-full bg-green-500"></span>
-      Backend conectado — v{{ health.version }}
-    </div>
-    <div
-      v-else
-      class="mt-8 inline-flex items-center gap-2 rounded-full bg-amber-50 px-4 py-2 text-sm text-amber-700"
-    >
-      <span class="h-2 w-2 animate-pulse rounded-full bg-amber-500"></span>
-      Conectando con el backend...
-    </div>
-
-    <!-- Requirements loaded from the API -->
-    <div class="mx-auto mt-10 w-full max-w-md text-left">
-      <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-400">
-        📋 Requisitos del proyecto
-      </h2>
-      <div v-if="loading" class="py-4 text-center text-sm text-gray-400">
-        Cargando requisitos...
-      </div>
-      <ul v-else class="space-y-2 opacity-75">
-        <li
-          v-for="req in requirements"
-          :key="req.id"
-          class="flex items-center gap-3 rounded-lg border border-dashed border-gray-300 bg-white/60 px-4 py-2.5 text-sm text-gray-500"
-        >
-          <span class="text-base">{{ req.status === 'DONE' ? '✅' : '⏳' }}</span>
-          {{ req.title }}
-        </li>
-      </ul>
-    </div>
+    <p class="mt-3 text-lg text-blue-600">Preparando tu contador de agua</p>
   </div>
 
-  <!-- 🚀 Real app — shown once requirements start getting done -->
-  <div v-else>
-    <div class="mb-8 text-center">
-      <h1 class="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">AquaCount</h1>
-      <p class="mt-4 text-lg text-gray-600">Una app para contar los vasos de agua que bebes cada día, con diseño azul y un botón grande para añadir vasos fácilmente.</p>
-
-      <div
-        v-if="health"
-        class="mt-4 inline-flex items-center gap-2 rounded-full bg-green-50 px-4 py-2 text-sm text-green-700"
-      >
-        <span class="h-2 w-2 rounded-full bg-green-500"></span>
-        Backend conectado — v{{ health?.version }}
+  <div
+    v-else
+    class="min-h-[calc(100vh-73px)] bg-gradient-to-b from-blue-50 via-cyan-50 to-blue-100"
+  >
+    <div class="mx-auto max-w-lg px-4 py-8">
+      <div class="mb-8 text-center">
+        <h1 class="text-4xl font-bold tracking-tight text-blue-900 sm:text-5xl">💧 AquaCount</h1>
+        <p class="mt-2 text-blue-600">Tu contador de vasos de agua</p>
       </div>
-    </div>
 
-    <!-- Progress bar -->
-    <div class="mx-auto mb-6 max-w-xl">
-      <div class="mb-1 flex justify-between text-sm text-gray-500">
-        <span>Progreso</span>
-        <span>{{ doneCount }}/{{ requirements.length }} — {{ progress }}%</span>
+      <div class="rounded-3xl bg-white/80 p-8 shadow-xl shadow-blue-200/50 backdrop-blur-sm">
+        <div class="mb-8 text-center">
+          <div
+            class="mb-2 text-8xl font-bold text-blue-600 transition-transform duration-300"
+            :class="{ 'scale-125': isAnimating }"
+          >
+            {{ glassesCount }}
+          </div>
+          <p class="text-xl text-blue-500">
+            {{ glassesCount === 1 ? 'vaso' : 'vasos' }} de agua hoy
+          </p>
+        </div>
+
+        <div class="mb-8">
+          <div class="mb-2 flex justify-between text-sm text-blue-600">
+            <span>Progreso diario</span>
+            <span>{{ glassesCount }}/{{ dailyGoal }} vasos</span>
+          </div>
+          <div class="h-4 overflow-hidden rounded-full bg-blue-100">
+            <div
+              class="h-full rounded-full transition-all duration-500 ease-out"
+              :class="goalReached ? 'bg-green-500' : 'bg-blue-500'"
+              :style="{ width: progress + '%' }"
+            ></div>
+          </div>
+          <p v-if="goalReached" class="mt-2 text-center font-medium text-green-600">
+            🎉 ¡Meta alcanzada!
+          </p>
+        </div>
+
+        <button
+          type="button"
+          class="w-full rounded-2xl bg-blue-500 py-8 shadow-lg shadow-blue-300/50 transition-all duration-200 hover:bg-blue-600 active:scale-95"
+          @click="addGlass"
+        >
+          <span class="mb-2 block text-6xl">💧</span>
+          <span class="text-2xl font-bold text-white">Añadir vaso</span>
+        </button>
+
+        <button
+          v-if="glassesCount > 0"
+          type="button"
+          class="mt-4 w-full rounded-xl bg-blue-50 py-3 font-medium text-blue-600 transition-colors hover:bg-blue-100"
+          @click="resetCount"
+        >
+          Reiniciar contador
+        </button>
       </div>
-      <div class="h-2 overflow-hidden rounded-full bg-gray-200">
+
+      <div class="mt-6 text-center text-sm text-blue-500">
+        <p>💡 Se recomienda beber 8 vasos de agua al día</p>
+      </div>
+
+      <div class="mt-4 text-center">
         <div
-          class="h-full rounded-full bg-indigo-500 transition-all duration-500"
-          :style="{ width: progress + '%' }"
-        ></div>
+          v-if="health"
+          class="inline-flex items-center gap-2 rounded-full bg-green-100 px-3 py-1 text-xs text-green-700"
+        >
+          <span class="h-1.5 w-1.5 rounded-full bg-green-500"></span>
+          Conectado
+        </div>
       </div>
-    </div>
-
-    <!-- Requirements list -->
-    <div class="mx-auto max-w-xl">
-      <div v-if="loading" class="text-center text-sm text-gray-400">Cargando requisitos...</div>
-
-      <div v-else-if="requirements.length === 0" class="mt-10 text-center">
-        <p class="text-gray-400">No hay requisitos en el PRD.</p>
-      </div>
-
-      <ul v-else class="space-y-2">
-        <li v-for="req in requirements" :key="req.id">
-          <RequirementCard :requirement="req" interactive @cycle-status="cycleStatus" />
-        </li>
-      </ul>
     </div>
   </div>
 </template>
 
 <style scoped>
-@keyframes steam {
-  0% {
-    opacity: 0;
-    transform: translateY(0) scaleX(1);
-  }
-  50% {
-    opacity: 0.6;
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-20px) scaleX(1.5);
-  }
-}
-
-.animate-steam-1 {
-  animation: steam 2s ease-in-out infinite;
-}
-.animate-steam-2 {
-  animation: steam 2s ease-in-out 0.4s infinite;
-}
-.animate-steam-3 {
-  animation: steam 2s ease-in-out 0.8s infinite;
+.scale-125 {
+  transform: scale(1.25);
 }
 </style>
